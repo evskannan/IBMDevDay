@@ -81,7 +81,7 @@ export async function listWatsonxModels(config) {
  * onToken(text) — called for each token chunk
  * onDone(usage) — called when stream ends; usage = { input_tokens, generated_tokens }
  */
-export async function watsonxGenerate({ config, messages, onToken, onDone, signal }) {
+export async function watsonxGenerate({ config, messages, onToken, onDone, signal, maxTokens }) {
   if (BANNED_MODELS.includes(config.modelId)) {
     throw new Error(`Model ${config.modelId} is banned by the hackathon rules.`);
   }
@@ -96,7 +96,7 @@ export async function watsonxGenerate({ config, messages, onToken, onDone, signa
     project_id: config.projectId,
     messages,
     parameters: {
-      max_new_tokens: 4096,
+      max_new_tokens: maxTokens || 4096,
       temperature: 0.3,
     },
   };

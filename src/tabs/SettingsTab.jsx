@@ -3,7 +3,7 @@
 // API keys stored in localStorage, clearable from UI. No keys committed to code.
 
 import React, { useState } from 'react';
-import { Settings, Eye, EyeOff, Wifi, CheckCircle, XCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Settings, Eye, EyeOff, Wifi, CheckCircle, XCircle, AlertCircle, Trash2, DollarSign } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { testWatsonxConnection, listWatsonxModels } from '../services/watsonxProvider';
 import { testOpenAIConnection, listOpenAIModels } from '../services/openaiProvider';
@@ -358,28 +358,85 @@ export function SettingsTab() {
         <ProviderConfig role="validator" />
         <OrchestrateConfig />
 
-        {/* Metrics */}
+        {/* Metrics dashboard */}
         <div className="card mt-md">
-          <div className="card-header">Session Metrics</div>
+          <div className="card-header">
+            <DollarSign size={14} />
+            Session Cost &amp; Metrics
+          </div>
           <div className="card-body">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-md)' }}>
+
+            {/* Row 1 — cost headline */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)' }}>
               <div>
-                <div className="form-label">Total Tokens</div>
-                <div className="text-accent font-bold" style={{ fontSize: 20 }}>{metrics.totalTokens.toLocaleString()}</div>
+                <div className="form-label">Estimated Cost (USD)</div>
+                <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-success)', fontVariantNumeric: 'tabular-nums' }}>
+                  ${(metrics.totalCostUSD || 0).toFixed(6)}
+                </div>
+                <div className="text-subtle text-xs">IBM watsonx.ai session cost</div>
               </div>
               <div>
                 <div className="form-label">Resource Units (RU)</div>
-                <div className="text-accent font-bold" style={{ fontSize: 20 }}>{metrics.totalRU.toFixed(3)}</div>
-                <div className="text-subtle text-xs">1,000 tokens = 1 RU = $0.0001</div>
+                <div className="text-accent font-bold" style={{ fontSize: 22 }}>
+                  {(metrics.totalRU || 0).toFixed(4)}
+                </div>
+                <div className="text-subtle text-xs">1,000 tokens = 1 RU = $0.0001 USD</div>
               </div>
               <div>
                 <div className="form-label">Traceability</div>
-                <div className="text-accent font-bold" style={{ fontSize: 20 }}>{metrics.traceabilityPct}%</div>
-                <div className="text-subtle text-xs">Target: 100%</div>
+                <div className="text-accent font-bold" style={{ fontSize: 22 }}>
+                  {metrics.traceabilityPct || 0}%
+                </div>
+                <div className="text-subtle text-xs">Evidence spans / total statements</div>
               </div>
             </div>
+
             <div className="divider" />
-            <div className="text-subtle text-xs">Session uptime: {uptime} minutes</div>
+
+            {/* Row 2 — token breakdown */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)' }}>
+              <div>
+                <div className="form-label">Total Tokens</div>
+                <div className="text-accent font-bold" style={{ fontSize: 18 }}>
+                  {(metrics.totalTokens || 0).toLocaleString()}
+                </div>
+                <div className="text-subtle text-xs">Input + Output</div>
+              </div>
+              <div>
+                <div className="form-label">Input Tokens</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-muted)' }}>
+                  {(metrics.inputTokens || 0).toLocaleString()}
+                </div>
+                <div className="text-subtle text-xs">Prompt / context tokens</div>
+              </div>
+              <div>
+                <div className="form-label">Output Tokens</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-secondary)' }}>
+                  {(metrics.outputTokens || 0).toLocaleString()}
+                </div>
+                <div className="text-subtle text-xs">Generated tokens</div>
+              </div>
+            </div>
+
+            <div className="divider" />
+
+            {/* Cost reference */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <div className="text-subtle text-xs">
+                Pricing ref:&nbsp;
+                <a
+                  href="https://dataplatform.cloud.ibm.com/docs/content/wsj/analyze-data/fm-tokens.html?context=wx&audience=wdp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: 'var(--color-accent-hover)' }}
+                >
+                  IBM watsonx Foundation Model Tokens
+                </a>
+                &nbsp;· 1,000 tokens = 1 RU = $0.0001 USD
+              </div>
+              <div className="text-subtle text-xs">Session uptime: {uptime} min</div>
+            </div>
+
           </div>
         </div>
 

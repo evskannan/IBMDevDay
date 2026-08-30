@@ -90,7 +90,10 @@ export const initialState = {
   // Metrics
   metrics: {
     totalTokens: 0,
+    inputTokens: 0,
+    outputTokens: 0,
     totalRU: 0,
+    totalCostUSD: 0,          // derived: totalTokens / 1000 * 0.0001
     sessionStart: null,
     traceabilityPct: 0,
     clarificationQuestions: 0,

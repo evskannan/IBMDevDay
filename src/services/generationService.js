@@ -33,14 +33,24 @@ function countEvidence(text) {
   return { traceCount: matches.length, totalCount: Math.max(sentences, matches.length) };
 }
 
+// ─── Cost calculation helper ──────────────────────────────────────────────────
+// IBM docs: 1,000 tokens = 1 RU = $0.0001 USD
+// https://dataplatform.cloud.ibm.com/docs/content/wsj/analyze-data/fm-tokens.html
+
+export function calcCost(totalTokens) {
+  const ru = totalTokens / 1000;
+  const usd = ru * 0.0001;
+  return { ru, usd };
+}
+
 // ─── Stream a single section ──────────────────────────────────────────────────
 
-async function streamSection({ key, messages, dispatch, llmConfig, role, signal }) {
+async function streamSection({ key, messages, dispatch, llmConfig, role, signal, currentMetrics }) {
   dispatch({ type: 'UPDATE_SECTION', payload: { key, updates: { status: 'streaming', text: '' } } });
 
   let accumulated = '';
-  let inputTokens = 0;
-  let generatedTokens = 0;
+  let sectionInput = 0;
+  let sectionOutput = 0;
 
   const generate = getGenerateFunc(role, llmConfig);
 
@@ -56,8 +66,8 @@ async function streamSection({ key, messages, dispatch, llmConfig, role, signal 
       });
     },
     onDone: (usage) => {
-      inputTokens = usage?.inputTokens || 0;
-      generatedTokens = usage?.generatedTokens || 0;
+      sectionInput  = usage?.inputTokens    || 0;
+      sectionOutput = usage?.generatedTokens || 0;
     },
   });
 
@@ -67,7 +77,23 @@ async function streamSection({ key, messages, dispatch, llmConfig, role, signal 
     payload: { key, updates: { text: accumulated, status: 'done', traceCount, totalCount } },
   });
 
-  return { text: accumulated, inputTokens, generatedTokens };
+  // Dispatch a live cost update after every section completes
+  const newInput  = (currentMetrics?.inputTokens  || 0) + sectionInput;
+  const newOutput = (currentMetrics?.outputTokens || 0) + sectionOutput;
+  const newTotal  = newInput + newOutput;
+  const { ru, usd } = calcCost(newTotal);
+  dispatch({
+    type: 'UPDATE_METRICS',
+    payload: {
+      inputTokens:  newInput,
+      outputTokens: newOutput,
+      totalTokens:  newTotal,
+      totalRU:      ru,
+      totalCostUSD: usd,
+    },
+  });
+
+  return { text: accumulated, inputTokens: sectionInput, generatedTokens: sectionOutput };
 }
 
 // ─── Main generation pipeline ─────────────────────────────────────────────────
@@ -85,9 +111,15 @@ export async function runGeneration({ state, dispatch, signal }) {
 
   dispatch({ type: 'SET_GENERATING', payload: true });
   dispatch({ type: 'RESET_SECTIONS' });
+  // Reset cost counters at start of a fresh pipeline run
+  dispatch({ type: 'UPDATE_METRICS', payload: { inputTokens: 0, outputTokens: 0, totalTokens: 0, totalRU: 0, totalCostUSD: 0 } });
 
-  let totalInput = 0;
-  let totalGenerated = 0;
+  // We pass a live metrics reference so each section accumulates on top of the previous.
+  // Because dispatch is async, we track running totals locally and pass them in.
+  let runningInput = 0;
+  let runningOutput = 0;
+
+  const getRunningMetrics = () => ({ inputTokens: runningInput, outputTokens: runningOutput });
 
   try {
     // Step 1: Requirements
@@ -95,31 +127,34 @@ export async function runGeneration({ state, dispatch, signal }) {
       key: 'requirements',
       messages: buildRequirementsPrompt(platform, text, context),
       dispatch, llmConfig, role: 'generator', signal,
+      currentMetrics: getRunningMetrics(),
     });
-    totalInput += reqResult.inputTokens;
-    totalGenerated += reqResult.generatedTokens;
+    runningInput  += reqResult.inputTokens;
+    runningOutput += reqResult.generatedTokens;
 
     if (signal?.aborted) return;
 
-    // Step 2a & 2b: AS-IS and TO-BE can run independently
-    // (Run sequentially here to keep token spend predictable)
+    // Step 2a: AS-IS
     const asIsResult = await streamSection({
       key: 'asIs',
       messages: buildAsIsPrompt(platform, text, reqResult.text, context),
       dispatch, llmConfig, role: 'generator', signal,
+      currentMetrics: getRunningMetrics(),
     });
-    totalInput += asIsResult.inputTokens;
-    totalGenerated += asIsResult.generatedTokens;
+    runningInput  += asIsResult.inputTokens;
+    runningOutput += asIsResult.generatedTokens;
 
     if (signal?.aborted) return;
 
+    // Step 2b: TO-BE
     const toBeResult = await streamSection({
       key: 'toBe',
       messages: buildToBePrompt(platform, text, reqResult.text, context),
       dispatch, llmConfig, role: 'generator', signal,
+      currentMetrics: getRunningMetrics(),
     });
-    totalInput += toBeResult.inputTokens;
-    totalGenerated += toBeResult.generatedTokens;
+    runningInput  += toBeResult.inputTokens;
+    runningOutput += toBeResult.generatedTokens;
 
     if (signal?.aborted) return;
 
@@ -128,9 +163,10 @@ export async function runGeneration({ state, dispatch, signal }) {
       key: 'fsd',
       messages: buildFSDPrompt(platform, text, reqResult.text, asIsResult.text, toBeResult.text, context),
       dispatch, llmConfig, role: 'generator', signal,
+      currentMetrics: getRunningMetrics(),
     });
-    totalInput += fsdResult.inputTokens;
-    totalGenerated += fsdResult.generatedTokens;
+    runningInput  += fsdResult.inputTokens;
+    runningOutput += fsdResult.generatedTokens;
 
     if (signal?.aborted) return;
 
@@ -139,23 +175,25 @@ export async function runGeneration({ state, dispatch, signal }) {
       key: 'tsd',
       messages: buildTSDPrompt(platform, text, fsdResult.text, context),
       dispatch, llmConfig, role: 'generator', signal,
+      currentMetrics: getRunningMetrics(),
     });
-    totalInput += tsdResult.inputTokens;
-    totalGenerated += tsdResult.generatedTokens;
+    runningInput  += tsdResult.inputTokens;
+    runningOutput += tsdResult.generatedTokens;
 
     if (signal?.aborted) return;
 
     // Step 5: RICEF-E-001
-    await streamSection({
+    const ricefResult = await streamSection({
       key: 'ricef',
       messages: buildRICEFPrompt(platform, text, reqResult.text, fsdResult.text, tsdResult.text, context),
       dispatch, llmConfig, role: 'generator', signal,
+      currentMetrics: getRunningMetrics(),
     });
+    runningInput  += ricefResult.inputTokens;
+    runningOutput += ricefResult.generatedTokens;
 
-    // Update metrics
-    const totalTokens = totalInput + totalGenerated;
-    const totalRU = Math.round(totalTokens / 10) / 100; // 1000 tokens = 1 RU
-    dispatch({ type: 'UPDATE_METRICS', payload: { totalTokens, totalRU } });
+    // streamSection already dispatched the final metrics after the last section.
+    // Nothing more to dispatch here.
 
     dispatch({ type: 'SET_GENERATING', payload: false });
   } catch (err) {
@@ -202,7 +240,13 @@ export async function regenerateSection({ key, state, dispatch, signal }) {
         throw new Error(`Unknown section key: ${key}`);
     }
 
-    await streamSection({ key, messages, dispatch, llmConfig, role: 'generator', signal });
+    await streamSection({
+      key, messages, dispatch, llmConfig, role: 'generator', signal,
+      currentMetrics: {
+        inputTokens:  state.metrics?.inputTokens  || 0,
+        outputTokens: state.metrics?.outputTokens || 0,
+      },
+    });
     dispatch({ type: 'SET_GENERATING', payload: false });
   } catch (err) {
     if (err?.name === 'AbortError') {
@@ -211,6 +255,33 @@ export async function regenerateSection({ key, state, dispatch, signal }) {
     }
     dispatch({ type: 'SET_GENERATION_ERROR', payload: err.message });
   }
+}
+
+// ─── Validator JSON extraction ─────────────────────────────────────────────────
+// Validator models frequently skip the requested ```json fence or add stray
+// commentary around the object. Try, in order: a fenced block (with or without
+// the "json" tag), the outermost {...} span in the text, then the raw text.
+
+function extractValidatorJSON(text) {
+  const candidates = [];
+
+  const fenced = text.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+  if (fenced) candidates.push(fenced[1]);
+
+  const first = text.indexOf('{');
+  const last = text.lastIndexOf('}');
+  if (first !== -1 && last > first) candidates.push(text.slice(first, last + 1));
+
+  candidates.push(text);
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch (_) {
+      // try next candidate
+    }
+  }
+  return null;
 }
 
 // ─── Validation pipeline ──────────────────────────────────────────────────────
@@ -235,23 +306,36 @@ export async function runValidation({ state, dispatch, signal }) {
     );
 
     let accumulated = '';
+    let valInput = 0;
+    let valOutput = 0;
     const generate = getGenerateFunc('validator', llmConfig);
 
     await generate({
       messages,
       signal,
+      maxTokens: 6144, // validation JSON (5 criteria + arrays) is more verbose than a single section
       onToken: (t) => { accumulated += t; },
-      onDone: () => {},
+      onDone: (usage) => {
+        valInput  = usage?.inputTokens    || 0;
+        valOutput = usage?.generatedTokens || 0;
+      },
+    });
+
+    // Accumulate validation tokens on top of generation totals
+    const prevInput  = state.metrics?.inputTokens  || 0;
+    const prevOutput = state.metrics?.outputTokens || 0;
+    const newInput   = prevInput  + valInput;
+    const newOutput  = prevOutput + valOutput;
+    const newTotal   = newInput   + newOutput;
+    const { ru, usd } = calcCost(newTotal);
+    dispatch({
+      type: 'UPDATE_METRICS',
+      payload: { inputTokens: newInput, outputTokens: newOutput, totalTokens: newTotal, totalRU: ru, totalCostUSD: usd },
     });
 
     // Extract JSON from the response
-    const jsonMatch = accumulated.match(/```json\s*([\s\S]+?)\s*```/);
-    const jsonStr = jsonMatch ? jsonMatch[1] : accumulated;
-
-    let result;
-    try {
-      result = JSON.parse(jsonStr);
-    } catch (_) {
+    let result = extractValidatorJSON(accumulated);
+    if (!result) {
       // Fallback: create a structured result indicating parse failure
       result = {
         criteria: [

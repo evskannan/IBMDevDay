@@ -5,12 +5,14 @@
 
 const PLATFORM_CONTEXT = {
   maximo: {
-    name: 'IBM Maximo Application Suite',
+    name: 'IBM Maximo Application Suite (MAS Manage)',
     objects: ['WORKORDER', 'PM', 'ASSET', 'ASSETMETER', 'JOBPLAN', 'ASSETSPEC', 'PERSON', 'LOCATIONS'],
-    launchPoints: ['Object launch point (INIT/SAVE/DELETE)', 'Attribute launch point', 'Action launch point', 'Custom condition'],
+    launchPoints: ['Object launch point (eventtype "0" on create)', 'Attribute launch point', 'Action launch point', 'Custom condition'],
     scriptLanguages: ['Jython', 'Nashorn (JavaScript)'],
     ricefTypes: ['R - Report', 'I - Interface', 'C - Conversion', 'E - Enhancement', 'F - Form/Screen'],
-    deployHint: 'Maximo Automation Script via OSLC API: POST /maximo/oslc/script',
+    // Corrected per MAS-DEPLOY-RUNBOOK.md — /oslc/script is the runner endpoint,
+    // mxapiautoscript is the management endpoint. Auth is OIDC, not apikey.
+    deployHint: 'POST {BASE_ALL}/maximo/oslc/os/mxapiautoscript · Auth: OIDC session · Script name prefix: BOB_ · See MAS-DEPLOY-RUNBOOK.md',
   },
   servicenow: {
     name: 'ServiceNow',
@@ -357,8 +359,8 @@ For each criterion, provide:
 4. **Clarity** — Can a developer implement this with zero clarifying questions?
 5. **Bob Readiness** — Is RICEF-E-001.md independently buildable? Does it have the deploy target section?
 
-Respond in this exact JSON format:
-\`\`\`json
+Respond with ONLY a single valid JSON object matching the shape below — no markdown code fence, no headings, no commentary before or after it. Keep every "feedback" value to one short plain-text sentence (under 25 words) with no line breaks inside the string.
+
 {
   "criteria": [
     { "name": "Completeness", "status": "PASS|WARN|FAIL", "score": 0-100, "feedback": "...", "blocker": true|false },
@@ -372,7 +374,6 @@ Respond in this exact JSON format:
   "warnings": ["list of non-blocking warnings"],
   "missing_topics": ["topics not covered that should be"]
 }
-\`\`\`
 
 RICEF-E-001.md:
 ${ricef}

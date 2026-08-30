@@ -10,7 +10,7 @@ const BANNED_MODELS = [
   'mistral-small-3-1-24b-instruct-2503',
 ];
 
-export async function openaiGenerate({ config, messages, onToken, onDone, signal }) {
+export async function openaiGenerate({ config, messages, onToken, onDone, signal, maxTokens }) {
   if (BANNED_MODELS.includes(config.modelId)) {
     throw new Error(`Model ${config.modelId} is banned by the hackathon rules.`);
   }
@@ -29,7 +29,7 @@ export async function openaiGenerate({ config, messages, onToken, onDone, signal
       messages,
       stream: true,
       temperature: 0.3,
-      max_tokens: 4096,
+      max_tokens: maxTokens || 4096,
     }),
   });
 
