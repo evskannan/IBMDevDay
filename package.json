@@ -1,0 +1,26 @@
+{
+  "name": "specbridge",
+  "private": true,
+  "version": "1.0.0",
+  "description": "SpecBridge — SDLC accelerator that converts meeting transcripts into machine-buildable spec bundles for IBM Maximo, ServiceNow, SAP, and custom platforms",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "docxtemplater": "^3.44.0",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.460.0",
+    "mammoth": "^1.8.0",
+    "pizzip": "^3.1.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.3.5"
+  }
+}

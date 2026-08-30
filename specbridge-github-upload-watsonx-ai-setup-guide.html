@@ -1,0 +1,543 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpecBridge Setup Guide</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f8fa;
+    --border: #e5e7eb;
+    --text: #1f2328;
+    --muted: #57606a;
+    --accent: #3b82d4;
+    --success: #1a7f37;
+    --warning: #9a6700;
+    --error: #cf222e;
+    --purple: #7c5cd8;
+    --code-bg: #f0f1f3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px 16px;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 700; margin: 28px 0 12px; padding-top: 28px; border-top: 1px solid var(--border); color: var(--text); }
+  h3 { font-size: 13px; font-weight: 700; margin: 16px 0 6px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; }
+  p { margin-bottom: 10px; color: var(--muted); }
+  .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+  /* Step blocks */
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+    align-items: flex-start;
+  }
+  .step-num {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .step-desc { color: var(--muted); font-size: 13px; }
+
+  /* Code blocks */
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 12px;
+    padding: 1px 5px;
+    color: var(--error);
+    word-break: break-all;
+  }
+  pre {
+    background: #0d1117;
+    color: #e6edf3;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 10px 0 14px;
+    border: 1px solid #30363d;
+  }
+  pre .c { color: #8b949e; }
+  pre .s { color: #a5d6ff; }
+  pre .k { color: #ff7b72; }
+  pre .v { color: #79c0ff; }
+
+  /* Callout boxes */
+  .callout {
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin: 12px 0;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .callout-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .callout.info { background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af; }
+  .callout.warn { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; }
+  .callout.success { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
+  .callout.danger { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+
+  /* Section header */
+  .section-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-badge {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    letter-spacing: 0.05em;
+  }
+  .section-badge.purple { background: var(--purple); }
+  .section-badge.green { background: var(--success); }
+
+  /* Nav list */
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 28px; }
+  .toc-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+  .toc ul { list-style: none; padding: 0; }
+  .toc li { padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .toc li:last-child { border: none; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { background: var(--surface); border: 1px solid var(--border); padding: 8px 10px; font-weight: 600; text-align: left; }
+  td { border: 1px solid var(--border); padding: 7px 10px; color: var(--muted); }
+  td:first-child { font-weight: 600; color: var(--text); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* Footer */
+  .footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  .highlight { color: var(--accent); font-weight: 600; }
+  .tag { display: inline-block; background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>SpecBridge — Setup Guide</h1>
+  <p class="subtitle">GitHub upload · watsonx.ai Project ID · API Key · Model selection · SpecBridge Settings wiring</p>
+
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <ul>
+      <li><a href="#github">Part 1 — Push SpecBridge to GitHub</a></li>
+      <li><a href="#watsonx-project">Part 2 — Get your watsonx.ai Project ID</a></li>
+      <li><a href="#api-key">Part 3 — Generate an IBM Cloud API Key</a></li>
+      <li><a href="#models">Part 4 — Understand the models (Granite)</a></li>
+      <li><a href="#wire">Part 5 — Wire it all into SpecBridge Settings</a></li>
+      <li><a href="#test">Part 6 — First run end-to-end</a></li>
+    </ul>
+  </div>
+
+  
+  <div class="section-header" id="github">
+    <span class="section-badge">PART 1</span>
+    <span style="font-weight:700">Push SpecBridge to GitHub</span>
+  </div>
+
+  <div class="callout info">
+    <span class="callout-icon">ℹ️</span>
+    <span>The code is already committed locally. You just need a GitHub Personal Access Token (PAT) to push it. The terminal cannot prompt for passwords, so a PAT is required.</span>
+  </div>
+
+  <h3>Step 1 — Create a GitHub Personal Access Token</h3>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Open GitHub → Settings</div>
+      <div class="step-desc">Go to <strong>github.com</strong> → click your avatar (top-right) → <strong>Settings</strong></div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Developer settings → Personal access tokens</div>
+      <div class="step-desc">Scroll to the bottom of the left sidebar → <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Tokens (classic)</strong></div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Generate new token (classic)</div>
+      <div class="step-desc">
+        Click <strong>Generate new token (classic)</strong><br />
+        Note: <code>SpecBridge hackathon push</code><br />
+        Expiration: <strong>30 days</strong><br />
+        Scopes: check <strong>repo</strong> (full control of private repos)
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Copy the token immediately</div>
+      <div class="step-desc">GitHub shows it only once. Copy it — looks like <code>ghp_xxxxxxxxxxxxxxxxxxxx</code></div>
+    </div>
+  </div>
+
+  <h3>Step 2 — Push using the token</h3>
+  <p>Open a terminal and run this command. Replace the placeholders:</p>
+  <pre><span class="c"># Replace YOUR_TOKEN and YOUR_USERNAME with your values</span>
+cd /home/kannan/Desktop/IBMDevDay/IBMDevDay
+
+git remote set-url origin https://YOUR_TOKEN@github.com/evskannan/IBMDevDay.git
+
+git push origin main</pre>
+
+  <div class="callout success">
+    <span class="callout-icon">✅</span>
+    <span>After push succeeds, go to <strong>github.com/evskannan/IBMDevDay</strong> — you will see the <code>specbridge/</code> folder and updated <code>README.md</code>.</span>
+  </div>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <span>After pushing, reset the remote URL to remove the token from it: <code>git remote set-url origin https://github.com/evskannan/IBMDevDay.git</code></span>
+  </div>
+
+  
+  <div class="section-header" id="watsonx-project" style="margin-top:32px">
+    <span class="section-badge purple">PART 2</span>
+    <span style="font-weight:700">Get your watsonx.ai Project ID</span>
+  </div>
+
+  <div class="callout info">
+    <span class="callout-icon">ℹ️</span>
+    <span>Looking at your screen — you already have <strong>"Kannan's sandbox"</strong> as the default project. That is the project ID you need. Here is how to get the exact UUID.</span>
+  </div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Click "Projects" in the top navigation</div>
+      <div class="step-desc">From your watsonx home page, click <strong>Projects</strong> in the top menu bar</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Click on "Kannan's sandbox"</div>
+      <div class="step-desc">This opens the project dashboard</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Click "Manage" tab → look at the URL</div>
+      <div class="step-desc">
+        Inside the project, click the <strong>Manage</strong> tab.<br />
+        The URL will look like:<br />
+        <code>https://dataplatform.cloud.ibm.com/projects/<span class="highlight">xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</span>/manage</code><br /><br />
+        That UUID in the URL is your <strong>Project ID</strong>. Copy it.
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Alternative: Developer Access panel</div>
+      <div class="step-desc">
+        On the watsonx home page, look for a <strong>"Developer access"</strong> panel or click <strong>Open Prompt Lab</strong> → inside Prompt Lab, look at the top-right → you'll see <strong>Project ID</strong> listed there.
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section-header" id="api-key" style="margin-top:32px">
+    <span class="section-badge purple">PART 3</span>
+    <span style="font-weight:700">Generate an IBM Cloud API Key</span>
+  </div>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <span><strong>Critical hackathon rule:</strong> If an API key is found in a public GitHub repo, IBM deactivates the key and suspends the account. Keys go into SpecBridge's Settings UI only — never in code.</span>
+  </div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Open IBM Cloud IAM</div>
+      <div class="step-desc">
+        Go to <strong>cloud.ibm.com</strong><br />
+        Click your profile avatar (top-right) → make sure account shows <code>2968214 - watsonx</code><br />
+        Top navigation: <strong>Manage</strong> → <strong>Access (IAM)</strong>
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">API keys → Create</div>
+      <div class="step-desc">
+        Left sidebar: <strong>API keys</strong><br />
+        Click <strong>Create an IBM Cloud API key</strong><br />
+        Name: <code>specbridge-hackathon</code><br />
+        Description: <code>SpecBridge watsonx.ai access</code>
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Choose "Delete the leaked key" option</div>
+      <div class="step-desc">
+        When creating the key, you may see an option about what happens if the key is leaked — select <strong>"Delete the leaked key"</strong> (this is the hackathon guide requirement).
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Copy and save the key immediately</div>
+      <div class="step-desc">
+        IBM shows the key <strong>only once</strong>. Click <strong>Download</strong> to save a local copy, or copy it to a password manager.<br />
+        The key looks like: <code>aBcDeFgHiJ1234567890_xxxxxxxxxxxxxxxxxxxx</code>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section-header" id="models" style="margin-top:32px">
+    <span class="section-badge purple">PART 4</span>
+    <span style="font-weight:700">Understand the Models — Which Granite to Use</span>
+  </div>
+
+  <p>SpecBridge defaults to <code>ibm/granite-13b-chat-v2</code>. Here is what the models mean and which to pick:</p>
+
+  <table>
+    <tr>
+      <th>Model ID</th>
+      <th>Best for</th>
+      <th>Speed</th>
+      <th>Cost</th>
+    </tr>
+    <tr>
+      <td><code>ibm/granite-3-8b-instruct</code></td>
+      <td>Fast generation, good quality — recommended for demos</td>
+      <td>Fast</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td><code>ibm/granite-13b-chat-v2</code></td>
+      <td>Good balance — SpecBridge default</td>
+      <td>Medium</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td><code>ibm/granite-20b-multilingual</code></td>
+      <td>Multi-language transcripts</td>
+      <td>Slow</td>
+      <td>Higher</td>
+    </tr>
+    <tr>
+      <td><code>ibm/granite-34b-code-instruct</code></td>
+      <td>Code generation (use for Jython script writing)</td>
+      <td>Slow</td>
+      <td>Higher</td>
+    </tr>
+  </table>
+
+  <div class="callout danger">
+    <span class="callout-icon">🚫</span>
+    <div>
+      <strong>These 3 models are BANNED by the hackathon — SpecBridge already blocks them in the UI:</strong><br />
+      <code>llama-3-405b-instruct</code>  ·  <code>mistral-medium-2505</code>  ·  <code>mistral-small-3-1-24b-instruct-2503</code>
+    </div>
+  </div>
+
+  <h3>How to browse models in watsonx.ai</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Click "Foundation models" in the top navigation</div>
+      <div class="step-desc">This shows all available models. Filter by <strong>IBM</strong> to see Granite models only.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Click any model → copy the "Model ID"</div>
+      <div class="step-desc">The model ID is what you paste into SpecBridge Settings (e.g. <code>ibm/granite-3-8b-instruct</code>)</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Or use "Fetch models" button in SpecBridge Settings</div>
+      <div class="step-desc">In SpecBridge → Settings → watsonx config → click <strong>Fetch models from endpoint</strong> — it will pull the live list and populate the dropdown automatically.</div>
+    </div>
+  </div>
+
+  
+  <div class="section-header" id="wire" style="margin-top:32px">
+    <span class="section-badge green">PART 5</span>
+    <span style="font-weight:700">Wire Everything into SpecBridge Settings</span>
+  </div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Start SpecBridge</div>
+      <div class="step-desc">
+        Open a terminal:
+        <pre>cd /home/kannan/Desktop/IBMDevDay/IBMDevDay/specbridge
+npm run dev</pre>
+        Open browser: <strong>http://localhost:5173</strong>
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Click the "Settings" tab (last tab)</div>
+      <div class="step-desc">You will see "Generator LLM" and "Validator LLM" cards</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Configure Generator LLM (watsonx.ai)</div>
+      <div class="step-desc">
+        Provider: <strong>IBM watsonx.ai</strong> (already selected by default)<br />
+        Endpoint URL: <code>https://us-south.ml.cloud.ibm.com</code> (pre-filled)<br />
+        Project ID: <em>paste the UUID from Part 2</em><br />
+        API Key: <em>paste the IBM Cloud API key from Part 3</em><br />
+        Model: select <code>ibm/granite-3-8b-instruct</code> (or click Fetch)
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Configure Validator LLM — same values</div>
+      <div class="step-desc">Use the same Project ID, API key, and model for the Validator. You can use a different (lighter) model to save credits.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-title">Click "Test Connection" on both</div>
+      <div class="step-desc">
+        You should see: <span style="color:#065f46;font-weight:600">✅ Connected — N models available</span><br />
+        If it fails: check the Project ID is correct and the API key has no extra spaces.
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section-header" id="test" style="margin-top:32px">
+    <span class="section-badge green">PART 6</span>
+    <span style="font-weight:700">First Run — End-to-End Demo</span>
+  </div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Inputs tab → Load Demo</div>
+      <div class="step-desc">Click <strong>"Load Demo"</strong> — loads the synthetic EAGLE Utilities PM planning transcript</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Platform: IBM Maximo Application Suite (default)</div>
+      <div class="step-desc">Leave platform as Maximo for the demo. Change to ServiceNow/SAP to test other platforms.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Generation tab → Generate All Sections</div>
+      <div class="step-desc">
+        Click <strong>Generate All Sections</strong>. Watch 6 sections stream in:<br />
+        Requirements → AS-IS → TO-BE → FSD → TSD → <strong>RICEF-E-001.md</strong><br />
+        The traceability % counter in the header shows evidence spans in real time.
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Validation tab → Validate Spec</div>
+      <div class="step-desc">Click <strong>Validate Spec</strong> — Validator LLM scores all 5 criteria and lists any blockers.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-title">Output tab → Export Handoff Bundle (.zip)</div>
+      <div class="step-desc">Click <strong>Export Handoff Bundle (.zip)</strong>. Open the ZIP — find <code>05-ricef/RICEF-E-001.md</code>. This is the file Bob uses in Milestone 2.</div>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <span class="callout-icon">🎉</span>
+    <div>
+      <strong>Milestone 1 complete!</strong> You now have a machine-buildable RICEF-E-001.md.<br />
+      For Milestone 2: paste that file into a fresh Bob task with the Maximo API URL + key → Bob deploys the Jython script automatically.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Quick Reference — Values Summary</h2>
+  <table>
+    <tr><th>Setting</th><th>Where to get it</th><th>Example format</th></tr>
+    <tr><td>watsonx Endpoint URL</td><td>Pre-filled in SpecBridge (Dallas)</td><td><code>https://us-south.ml.cloud.ibm.com</code></td></tr>
+    <tr><td>Project ID</td><td>watsonx → Projects → Kannan's sandbox → Manage tab → URL</td><td><code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code></td></tr>
+    <tr><td>API Key</td><td>cloud.ibm.com → Manage → IAM → API keys → Create</td><td><code>aBcDeFgH_xxxxxxxxxxxx</code></td></tr>
+    <tr><td>Model ID</td><td>watsonx → Foundation models → IBM → click model → copy ID</td><td><code>ibm/granite-3-8b-instruct</code></td></tr>
+    <tr><td>GitHub PAT</td><td>github.com → Settings → Developer settings → PAT (classic)</td><td><code>ghp_xxxxxxxxxxxxxxxxxxxx</code></td></tr>
+  </table>
+
+  <div class="callout warn" style="margin-top:20px">
+    <span class="callout-icon">💡</span>
+    <div>
+      <strong>Credit tip:</strong> The $80 credit burns fast. Use <code>ibm/granite-3-8b-instruct</code> for the demo — it's the fastest and cheapest Granite model. Check Settings → Session Metrics in SpecBridge to monitor RU spend live. 1,000 tokens = 1 RU = $0.0001.
+    </div>
+  </div>
+
+  <div class="footer">Made with IBM Bob  ·  SpecBridge — IBM TechXchange 2026 Hackathon</div>
+</div>
+</body>
+</html>
